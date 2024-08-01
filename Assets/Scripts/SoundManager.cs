@@ -3,14 +3,14 @@ using UnityEngine;
 
 public class SoundManager : MonoBehaviour
 {
-    //实现单例，因为这个是唯一的
     public static SoundManager Instance { get; private set; }
-
-    //引用SO文件，这个SO文件又通过数组引用真实音频文件数据
     [SerializeField] private AudioClipRefsSO audioClipRefsSO;
+    private const string PLAYER_PREFS_SOUND_EFFECTS_VOLUME = "SoundEffectsVolume";
+    private float volume = 1f;
 
     private void Awake() {
         Instance = this;
+        volume = PlayerPrefs.GetFloat(PLAYER_PREFS_SOUND_EFFECTS_VOLUME, 1f);
     }
 
     private void Start() {
@@ -52,18 +52,28 @@ public class SoundManager : MonoBehaviour
         PlaySound(audioClipRefsSO.deliverySuccess, deliveryCounter.transform.position);
     }
 
-
-    //这里提供一个基于方位，大小，音频文件的函数
-    private void PlaySound(AudioClip audioClip,Vector3 position,float volume = 1f) {
-        AudioSource.PlayClipAtPoint(audioClip,position,volume);
+    private void PlaySound(AudioClip audioClip, Vector3 position, float volumeMultiplier = 1f) {
+        AudioSource.PlayClipAtPoint(audioClip, position, volumeMultiplier * volume);
     }
 
     private void PlaySound(AudioClip[] audioClipArray, Vector3 position, float volume = 1f) {
         PlaySound(audioClipArray[UnityEngine.Random.Range(0,audioClipArray.Length)],position,volume);
     }
 
-    //这是公开给玩家的方法
     public void PlayFootstepsSound(Vector3 position,float volume) {
         PlaySound(audioClipRefsSO.footstep,position,volume);
+    }
+
+    public void ChangeVolume() {
+        volume += .1f;
+        if (volume > 1f) {
+            volume = 0f;
+        }
+        PlayerPrefs.SetFloat(PLAYER_PREFS_SOUND_EFFECTS_VOLUME, volume);
+        PlayerPrefs.Save();
+    }
+
+    public float GetVolume() {
+        return volume;
     }
 }

@@ -4,9 +4,8 @@ using UnityEngine;
 
 public class KitchenGameManager : MonoBehaviour
 {
-    //弄单例
     public static KitchenGameManager Instance { get; private set; }
-    //搞游戏中的状态
+
     private enum State {
         WaitingToStart,
         CountdownToStart,
@@ -14,26 +13,47 @@ public class KitchenGameManager : MonoBehaviour
         GameOver,
     }
 
-    //事件
     public event EventHandler OnStateChanged;
+    public event EventHandler OnGamePaused;
+    public event EventHandler OnGameUnpaused;
 
     private State state;
-    //弄个计时器
     [SerializeField] private float waitingToStartTimer = 1f;
     [SerializeField] private float countdownToStartTimer = 3f;
     [SerializeField] private float gamePlayingTimer;
     [SerializeField] private float gamePlayingTimerMax = 10f;
 
+    private bool isGamePaused = false;
+
     private void Awake() {
         Instance = this;
-        //一开始设置初始状态，准备开始状态
         state = State.WaitingToStart;
     }
 
+    private void Start() {
+        GameInput.Instance.OnPauseAction += GameInput_OnPauseAction;
+    }
+
+    private void GameInput_OnPauseAction(object sender, EventArgs e) {
+        TogglePauseGame();
+    }
+
+    public void TogglePauseGame() {
+        isGamePaused = !isGamePaused;
+        if (isGamePaused) {
+            Time.timeScale = 0f;
+            //调用
+            OnGamePaused?.Invoke(this, EventArgs.Empty);
+        }
+        else {
+            Time.timeScale = 1f;
+            OnGameUnpaused?.Invoke(this, EventArgs.Empty);
+        }
+
+    }
+
     private void Update() {
-        //切换状态
         switch (state) {
-            //一开始准备开始状态，经过计时器计数，就切换到确定开始状态
             case State.WaitingToStart:
                 waitingToStartTimer -= Time.deltaTime; 
                 if(waitingToStartTimer < 0f) {
@@ -62,8 +82,6 @@ public class KitchenGameManager : MonoBehaviour
         Debug.Log(state);
     }
 
-
-    //返回状态判断
     public bool IsGamePlaying() {
         return state == State.GamePlaying;
     }

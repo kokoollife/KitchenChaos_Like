@@ -38,4 +38,8 @@ public class BaseCounter : MonoBehaviour,IKitchenObjectParent
     public Transform GetCounterTopPoint() {
         return counterTopPoint;
     }
+
+    public static void ResetStaticData() {
+        OnAnyObjectPlacedHere = null;
+    }
 }
