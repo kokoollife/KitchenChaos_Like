@@ -34,7 +34,6 @@ public class Player : MonoBehaviour,IKitchenObjectParent {
     }
 
     private void GameInput_OnInteractAlternateAction(object sender, EventArgs e) {
-        //如果玩家当前的管理器状态处于游戏运行中，才能允许玩家进行任何交互操作
         if (!KitchenGameManager.Instance.IsGamePlaying()) return;
         
         if(selectedCounter != null) {
@@ -43,7 +42,6 @@ public class Player : MonoBehaviour,IKitchenObjectParent {
     }
 
     private void GameInput_OnInteractAction(object sender, EventArgs e) {
-        //如果玩家当前的管理器状态处于游戏运行中，才能允许玩家进行任何交互操作
         if (!KitchenGameManager.Instance.IsGamePlaying()) return;
 
         if (selectedCounter != null) {
@@ -93,13 +91,15 @@ public class Player : MonoBehaviour,IKitchenObjectParent {
         bool canMove = !Physics.CapsuleCast(transform.position, transform.position + Vector3.up * playerHeight, playerRadius, moveDir, moveDistance);
         if (!canMove) {
             Vector3 moveDirX = new Vector3(moveDir.x, 0, 0).normalized;
-            canMove = moveDir.x != 0 && !Physics.CapsuleCast(transform.position, transform.position + Vector3.up * playerHeight, playerRadius, moveDirX, moveDistance);
+            //修改判断
+            canMove = (moveDir.x < -.5f || moveDir.x > +.5f) && !Physics.CapsuleCast(transform.position, transform.position + Vector3.up * playerHeight, playerRadius, moveDirX, moveDistance);
             if (canMove) {
                 moveDir = moveDirX;
             }
             else {
                 Vector3 moveDirZ = new Vector3(0, 0, moveDir.z).normalized;
-                canMove = moveDir.z != 0 && !Physics.CapsuleCast(transform.position, transform.position + Vector3.up * playerHeight, playerRadius, moveDirZ, moveDistance);
+                //修改判断
+                canMove = (moveDir.z < -.5f || moveDir.z > +.5f) && !Physics.CapsuleCast(transform.position, transform.position + Vector3.up * playerHeight, playerRadius, moveDirZ, moveDistance);
                 if (canMove) {
                     moveDir = moveDirZ;
                 }

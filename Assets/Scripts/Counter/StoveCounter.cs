@@ -108,7 +108,6 @@ public class StoveCounter : BaseCounter,IHasProgress
         }
         else {
             if (player.HasKitchenObject()) {
-                //实现目标3
                 if (player.GetKitchenObject().TryGetPlate(out PlateKitchenObject plateKitchenObject)) {
                     if (plateKitchenObject.TryAddIngredient(GetKitchenObject().GetKitchenObjectSO())) {
                         GetKitchenObject().DestroySelf();
@@ -172,5 +171,10 @@ public class StoveCounter : BaseCounter,IHasProgress
             }
         }
         return null;
+    }
+
+    //公开那个正在烤的状态
+    public bool IsFried() {
+        return state == State.Fried;
     }
 }

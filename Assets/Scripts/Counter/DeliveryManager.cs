@@ -15,7 +15,6 @@ public class DeliveryManager : MonoBehaviour
     private float spawnRecipeTimer;
     private float spawnRecipeTimerMax = 4f;
     private int waitingRecipesMax = 4;
-    //新增一个计数
     private int successfulRecipesAmount = 0;
 
     private void Awake() {
@@ -27,7 +26,8 @@ public class DeliveryManager : MonoBehaviour
         spawnRecipeTimer -= Time.deltaTime;
         if(spawnRecipeTimer <= 0f) {
             spawnRecipeTimer = spawnRecipeTimerMax;
-            if(waitingRecipeSOList.Count < waitingRecipesMax) {
+            //我们要确保的是交付的前提是游戏还在进行中
+            if(KitchenGameManager.Instance.IsGamePlaying() && waitingRecipeSOList.Count < waitingRecipesMax) {
                 RecipeSO waitingRecipeSO = recipeListSO.recipeSOList[UnityEngine.Random.Range(0,recipeListSO.recipeSOList.Count)];
                 waitingRecipeSOList.Add(waitingRecipeSO);
                 OnRecipeSpawned?.Invoke(this, EventArgs.Empty);
@@ -53,7 +53,6 @@ public class DeliveryManager : MonoBehaviour
                 }
 
                 if (plateContentsMatchesRecipe) {
-                    //计数
                     successfulRecipesAmount++;
 
                     waitingRecipeSOList.RemoveAt(i);

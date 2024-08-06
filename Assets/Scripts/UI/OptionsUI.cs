@@ -1,3 +1,4 @@
+using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -17,6 +18,9 @@ public class OptionsUI : MonoBehaviour {
     [SerializeField] private Button interactAlternateButton;
     [SerializeField] private Button pauseButton;
 
+    [SerializeField] private Button gamepadInteractButton;
+    [SerializeField] private Button gamepadInteractAlternateButton;
+    [SerializeField] private Button gamepadPauseButton;
 
     [SerializeField] private TextMeshProUGUI moveUpButtonText;
     [SerializeField] private TextMeshProUGUI moveDownButtonText;
@@ -25,6 +29,11 @@ public class OptionsUI : MonoBehaviour {
     [SerializeField] private TextMeshProUGUI interactButtonText;
     [SerializeField] private TextMeshProUGUI interactAlternateButtonText;
     [SerializeField] private TextMeshProUGUI pauseButtonText;
+
+    [SerializeField] private TextMeshProUGUI gamepadInteractButtonText;
+    [SerializeField] private TextMeshProUGUI gamepadInteractAlternateButtonText;
+    [SerializeField] private TextMeshProUGUI gamepadPauseButtonText;
+
     [SerializeField] private Transform pressToRebindKeyTransform;
 
     private void Awake() {
@@ -40,8 +49,10 @@ public class OptionsUI : MonoBehaviour {
             UpdateVisual();
         });
 
+        //关闭设置界面，那么就显示主菜单界面
         closeButton.onClick.AddListener(() => {
             Hide();
+            onCloseButtonAction();//调用委托
         });
 
         //这里测试按键换绑的效果
@@ -52,6 +63,9 @@ public class OptionsUI : MonoBehaviour {
         interactButton.onClick.AddListener(() => { RebindBinding(GameInput.Binding.Interact); });
         interactAlternateButton.onClick.AddListener(() => { RebindBinding(GameInput.Binding.InteractAlternate); });
         pauseButton.onClick.AddListener(() => { RebindBinding(GameInput.Binding.Pause); });
+        gamepadInteractButton.onClick.AddListener(() => { RebindBinding(GameInput.Binding.Gamepad_Interact); });
+        gamepadInteractAlternateButton.onClick.AddListener(() => { RebindBinding(GameInput.Binding.Gamepad_InteractAlternate); });
+        gamepadPauseButton.onClick.AddListener(() => { RebindBinding(GameInput.Binding.Gamepad_Pause); });
     }
 
     private void Start() {
@@ -71,7 +85,6 @@ public class OptionsUI : MonoBehaviour {
         soundEffectsText.text = "Sound Effects : " + Mathf.Round(SoundManager.Instance.GetVolume() * 10f);
         musicText.text = "Music: " + Mathf.Round(MusicManager.Instance.GetVolume() * 10f);
 
-        //然后结合输入单例，获取到枚举的值输入进去，从而指定更改按钮的文本
         moveUpButtonText.text = GameInput.Instance.GetBindingText(GameInput.Binding.Move_Up);
         moveDownButtonText.text = GameInput.Instance.GetBindingText(GameInput.Binding.Move_Down);
         moveLeftButtonText.text = GameInput.Instance.GetBindingText(GameInput.Binding.Move_Left);
@@ -79,10 +92,19 @@ public class OptionsUI : MonoBehaviour {
         interactButtonText.text = GameInput.Instance.GetBindingText(GameInput.Binding.Interact);
         interactAlternateButtonText.text = GameInput.Instance.GetBindingText(GameInput.Binding.InteractAlternate);
         pauseButtonText.text = GameInput.Instance.GetBindingText(GameInput.Binding.Pause);
+        gamepadInteractButtonText.text = GameInput.Instance.GetBindingText(GameInput.Binding.Gamepad_Interact);
+        gamepadInteractAlternateButtonText.text = GameInput.Instance.GetBindingText(GameInput.Binding.Gamepad_InteractAlternate);
+        gamepadPauseButtonText.text = GameInput.Instance.GetBindingText(GameInput.Binding.Gamepad_Pause);
     }
 
-    public void Show() {
+    private Action onCloseButtonAction;
+    //改动成输入委托
+    public void Show(Action onCloseButtonAction) {
+        this.onCloseButtonAction = onCloseButtonAction;
+
         gameObject.SetActive(true);
+
+        soundEffectsButton.Select();
     }
 
     public void Hide() {

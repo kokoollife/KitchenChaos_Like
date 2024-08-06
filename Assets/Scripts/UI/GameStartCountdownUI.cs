@@ -4,12 +4,21 @@ using UnityEngine;
 
 public class GameStartCountdownUI : MonoBehaviour
 {
+    private const string NUMBER_POPUP = "NumberPopup";
+
     [SerializeField] private TextMeshProUGUI countdownText;
+
+    //补充动画组件
+    private Animator animator;
+    private int previousCountdownNumber;
+
+    private void Awake() {
+        animator = GetComponent<Animator>();
+    }
 
     private void Start() {
         KitchenGameManager.Instance.OnStateChanged += KitchenGameManager_OnStateChanged;
 
-        //默认隐藏
         Hide();
     }
 
@@ -22,10 +31,16 @@ public class GameStartCountdownUI : MonoBehaviour
         }
     }
 
-    //获取计时的数据文本
     private void Update() {
-        //不想要小数，要整数
-        countdownText.text = Mathf.Ceil(KitchenGameManager.Instance.GetCountdownToStartTimer()).ToString();
+        int countdownNumber = Mathf.CeilToInt(KitchenGameManager.Instance.GetCountdownToStartTimer());
+        countdownText.text = countdownNumber.ToString();
+
+        //启动动画的逻辑就是更新数字
+        if(previousCountdownNumber != countdownNumber) {
+            previousCountdownNumber = countdownNumber;
+            animator.SetTrigger(NUMBER_POPUP);
+            SoundManager.Instance.PlayCountdownSound();
+        }
     }
 
     private void Show() {

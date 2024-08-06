@@ -18,7 +18,7 @@ public class KitchenGameManager : MonoBehaviour
     public event EventHandler OnGameUnpaused;
 
     private State state;
-    [SerializeField] private float waitingToStartTimer = 1f;
+    //[SerializeField] private float waitingToStartTimer = 1f;
     [SerializeField] private float countdownToStartTimer = 3f;
     [SerializeField] private float gamePlayingTimer;
     [SerializeField] private float gamePlayingTimerMax = 10f;
@@ -32,6 +32,16 @@ public class KitchenGameManager : MonoBehaviour
 
     private void Start() {
         GameInput.Instance.OnPauseAction += GameInput_OnPauseAction;
+        //增加事件处理，这样当我们碰到了新手引导图片，按下交互键之后，我们才能正式进入游戏倒数计时阶段
+        GameInput.Instance.OnInteractAction += GameInput_OnInteractAction;
+    }
+
+    private void GameInput_OnInteractAction(object sender, EventArgs e) {
+        //如果当前状态是准备开始进入游戏
+        if(state == State.WaitingToStart) {
+            state = State.CountdownToStart;
+            OnStateChanged?.Invoke(this, EventArgs.Empty);
+        }
     }
 
     private void GameInput_OnPauseAction(object sender, EventArgs e) {
@@ -42,7 +52,6 @@ public class KitchenGameManager : MonoBehaviour
         isGamePaused = !isGamePaused;
         if (isGamePaused) {
             Time.timeScale = 0f;
-            //调用
             OnGamePaused?.Invoke(this, EventArgs.Empty);
         }
         else {
@@ -55,11 +64,16 @@ public class KitchenGameManager : MonoBehaviour
     private void Update() {
         switch (state) {
             case State.WaitingToStart:
-                waitingToStartTimer -= Time.deltaTime; 
-                if(waitingToStartTimer < 0f) {
-                    state = State.CountdownToStart;
-                    OnStateChanged?.Invoke(this,EventArgs.Empty);
-                }
+                //我们把逻辑的处理交给了事件，因为教程相关的脚本不在
+                //游戏管理器中，所以只拿个状态作为判断
+                //同时也不再需要计时器做一个缓冲了
+                //直接就是进入到新手引导图片，卡住，直到我们交互
+                //waitingToStartTimer -= Time.deltaTime; 
+                //if(waitingToStartTimer < 0f) {
+                //    state = State.CountdownToStart;
+                //    OnStateChanged?.Invoke(this,EventArgs.Empty);
+                //}
+                //就进入到游戏进行时前的倒数阶段。
                 break;
             case State.CountdownToStart:
                 countdownToStartTimer -= Time.deltaTime;

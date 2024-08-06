@@ -2,14 +2,11 @@ using UnityEngine;
 using UnityEngine.UI;
 
 public class GamePauseUI : MonoBehaviour {
-
-    //引用相应的对象
     [SerializeField] private Button resumeButton;
     [SerializeField] private Button mainMenuButton;
     [SerializeField] private Button optionsButton;
 
     private void Awake() {
-        //给按钮绑定逻辑
         resumeButton.onClick.AddListener(() => {
             KitchenGameManager.Instance.TogglePauseGame();
         });
@@ -18,15 +15,15 @@ public class GamePauseUI : MonoBehaviour {
         });
 
         optionsButton.onClick.AddListener(() => {
-            OptionsUI.Instance.Show();
+            Hide();
+            //利用委托，传入GamePauseUI.Show
+            OptionsUI.Instance.Show(Show);
         });
     }
 
     private void Start() {
         KitchenGameManager.Instance.OnGamePaused += KitchenGameManager_OnGamePaused;
         KitchenGameManager.Instance.OnGameUnpaused += KitchenGameManager_OnGameUnpaused;
-
-        //默认隐藏
         Hide();
     }
 
@@ -40,6 +37,7 @@ public class GamePauseUI : MonoBehaviour {
 
     private void Show() {
         gameObject.SetActive(true);
+        resumeButton.Select();
     }
     private void Hide() {
         gameObject.SetActive(false);

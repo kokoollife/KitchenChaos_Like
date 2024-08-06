@@ -8,13 +8,10 @@ public class GameInput : MonoBehaviour
     public event EventHandler OnInteractAction;
     public event EventHandler OnInteractAlternateAction;
     public event EventHandler OnPauseAction;
+    public event EventHandler OnBindingRebind;//这里补充后面优化操作会用到的事件处理
 
     private PlayerInputActions playerInputActions;
-
-    //我们要保存我们的输入设置，所以我们像之前那样，弄个字符串常量，把东西存入json
     private const string PLAYER_PREFS_BINDINGS = "InputBindings";
-
-    //对我们的按钮操作枚举
     public enum Binding {
         Move_Up,
         Move_Down,
@@ -23,13 +20,15 @@ public class GameInput : MonoBehaviour
         Interact,
         InteractAlternate,
         Pause,
+        //这里补充手柄的
+        Gamepad_Interact,
+        Gamepad_InteractAlternate,
+        Gamepad_Pause,
     }
 
     private void Awake() {
         Instance = this;
         playerInputActions = new PlayerInputActions();
-
-        //我们要注意加载我们的json保存好的输入设置时，要在enable前执行
         if (PlayerPrefs.HasKey(PLAYER_PREFS_BINDINGS)) {
             playerInputActions.LoadBindingOverridesFromJson(PlayerPrefs.GetString(PLAYER_PREFS_BINDINGS));
         }
@@ -69,12 +68,6 @@ public class GameInput : MonoBehaviour
         return inputVector;
     }
 
-    //输入我们的输入枚举，然后返回对应的新输入系统的来的绑定按键字符串
-    //新输入系统的下标规律是，我们按一个目录区分，每个最终目录下有多个下标组合而成
-    //其中我们不要看到有些折叠就错认为下标会不一样，实际上是从上往下按顺序排列下标的
-    //比如我们的move，move下折叠是上下左右按键操作
-    //所以move这个父是bindings[0]
-    //上是bindings[1]依此类推。
     public string GetBindingText(Binding binding) {
         switch (binding) {
             default:
@@ -92,12 +85,17 @@ public class GameInput : MonoBehaviour
                 return playerInputActions.Player.InteractAlternate.bindings[0].ToDisplayString();
             case Binding.Pause:
                 return playerInputActions.Player.Pause.bindings[0].ToDisplayString();
+            //补充
+            case Binding.Gamepad_Interact:
+                return playerInputActions.Player.Interact.bindings[1].ToDisplayString();
+            case Binding.Gamepad_InteractAlternate:
+                return playerInputActions.Player.InteractAlternate.bindings[1].ToDisplayString();
+            case Binding.Gamepad_Pause:
+                return playerInputActions.Player.Pause.bindings[1].ToDisplayString();
         }
     }
 
-    //提供可以修改按键绑定的函数
     public void RebindBinding(Binding binding, Action onActionRebound) {
-        //要注意换绑按键，我们需要暂时停住输入系统的启用。
         playerInputActions.Player.Disable();
 
         InputAction inputAction;
@@ -132,21 +130,30 @@ public class GameInput : MonoBehaviour
                 inputAction = playerInputActions.Player.Pause;
                 bindingIndex = 0;
                 break;
+            //补充，注意输入映射也要有相应的手柄输入
+            case Binding.Gamepad_Interact:
+                inputAction = playerInputActions.Player.Interact;
+                bindingIndex = 1;
+                break;
+            case Binding.Gamepad_InteractAlternate:
+                inputAction = playerInputActions.Player.InteractAlternate;
+                bindingIndex = 1;
+                break;
+            case Binding.Gamepad_Pause:
+                inputAction = playerInputActions.Player.Pause;
+                bindingIndex = 1;
+                break;
         }
 
         inputAction.PerformInteractiveRebinding(bindingIndex).OnComplete(callback => {
-            //测试输入字符
-            //Debug.Log(callback.action.bindings[1].path);
-            //测试覆盖后的按键输入字符
-            //Debug.Log(callback.action.bindings[1].overridePath);
-            callback.Dispose();//换绑要避免内存错误
+            callback.Dispose();
             playerInputActions.Player.Enable();
-            //通过委托，这样我们就不用把OptionsUI里面的逻辑函数调用到这里了，我们可以用委托包裹住别人的函数，然后直接使用。
             onActionRebound();
 
-            //存为json格式
             PlayerPrefs.SetString(PLAYER_PREFS_BINDINGS, playerInputActions.SaveBindingOverridesAsJson());
             PlayerPrefs.Save();
+            //这里调用事件
+            OnBindingRebind?.Invoke(this, EventArgs.Empty);
         }).Start();
     }
 }
