@@ -1,7 +1,8 @@
-using Unity.VisualScripting;
+using Unity.Netcode;
 using UnityEngine;
 
-public class KitchenObject : MonoBehaviour
+//修改
+public class KitchenObject : NetworkBehaviour
 {
     [SerializeField] private KitchenObjectSO kitchenObjectSO;
 
@@ -21,8 +22,10 @@ public class KitchenObject : MonoBehaviour
         }
 
         kitchenObjectParent.SetKitchenObject(this);
-        transform.parent = kitchenObjectParent.GetKitchenObjectFollowTransform();
-        transform.localPosition = Vector3.zero;
+        
+        //涉及到父类改变这些在联网环境下容易出问题
+        //transform.parent = kitchenObjectParent.GetKitchenObjectFollowTransform();
+        //transform.localPosition = Vector3.zero;
     }
     public IKitchenObjectParent GetClearCounter() { return kitchenObjectParent; }
 
@@ -31,25 +34,16 @@ public class KitchenObject : MonoBehaviour
         Destroy(gameObject);
     }
 
-    public static KitchenObject SpawnKitchenObject(KitchenObjectSO kitchenObjectSO,IKitchenObjectParent kitchenObjectParent) {
-        Transform kitchenObjectTransform = Instantiate(kitchenObjectSO.prefab);
-
-        KitchenObject kitchenObject = kitchenObjectTransform.GetComponent<KitchenObject>();
-
-        kitchenObject.SetKitchenObjectParent(kitchenObjectParent);
-
-        return kitchenObject;
+    //改动封装
+    public static void SpawnKitchenObject(KitchenObjectSO kitchenObjectSO,IKitchenObjectParent kitchenObjectParent) {
+        KitchenGameMultiplayer.Instance.SpawnKitchenObject(kitchenObjectSO, kitchenObjectParent);
     }
 
-    //实现目标3：新增一个封装的函数，专门处理玩家拿着碟子去各自不同的柜台拿取食物的
     public bool TryGetPlate(out PlateKitchenObject plateKitchenObject) {
-        //如果食物碰到的是碟子
         if(this is PlateKitchenObject) {
-            //除了输出判断外，还需要输出玩家当前手上拿的是碟子这个游戏对象
             plateKitchenObject = this as PlateKitchenObject;
             return true;
         }
-        //如果碰到不是，那么什么也不做，就单纯判断
         else {
             plateKitchenObject = null;
             return false;

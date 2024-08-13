@@ -1,9 +1,9 @@
 using System;
+using Unity.Netcode;
 using UnityEngine;
 
 public class BaseCounter : MonoBehaviour,IKitchenObjectParent
 {
-    //新建静态全局的事件处理
     public static event EventHandler OnAnyObjectPlacedHere;
     [SerializeField] private Transform counterTopPoint;
 
@@ -23,7 +23,6 @@ public class BaseCounter : MonoBehaviour,IKitchenObjectParent
 
     public void SetKitchenObject(KitchenObject kitchenObject) {
         this.kitchenObject = kitchenObject;
-        //一样类似的操作
         if(kitchenObject != null) {
             OnAnyObjectPlacedHere?.Invoke(this, EventArgs.Empty);
         }
@@ -41,5 +40,10 @@ public class BaseCounter : MonoBehaviour,IKitchenObjectParent
 
     public static void ResetStaticData() {
         OnAnyObjectPlacedHere = null;
+    }
+
+    //实现接口
+    public NetworkObject GetNetworkObject() {
+        return null;
     }
 }

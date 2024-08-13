@@ -1,3 +1,4 @@
+using Unity.Netcode;
 using UnityEngine;
 
 public interface IKitchenObjectParent
@@ -11,4 +12,7 @@ public interface IKitchenObjectParent
     public void ClearKitchenObject();
 
     public bool HasKitchenObject();
+
+    //加这接口，目的是为了获取网络对象
+    public NetworkObject GetNetworkObject();
 }

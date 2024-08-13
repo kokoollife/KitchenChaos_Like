@@ -19,9 +19,9 @@ public class KitchenGameManager : MonoBehaviour
 
     private State state;
     //[SerializeField] private float waitingToStartTimer = 1f;
-    [SerializeField] private float countdownToStartTimer = 3f;
+    [SerializeField] private float countdownToStartTimer = 1f;
     [SerializeField] private float gamePlayingTimer;
-    [SerializeField] private float gamePlayingTimerMax = 10f;
+    [SerializeField] private float gamePlayingTimerMax = 90f;
 
     private bool isGamePaused = false;
 
@@ -32,12 +32,14 @@ public class KitchenGameManager : MonoBehaviour
 
     private void Start() {
         GameInput.Instance.OnPauseAction += GameInput_OnPauseAction;
-        //增加事件处理，这样当我们碰到了新手引导图片，按下交互键之后，我们才能正式进入游戏倒数计时阶段
         GameInput.Instance.OnInteractAction += GameInput_OnInteractAction;
+        //Debug:直接进入到状态，不用再等一个计时缓冲了。
+        //不要忘记，不启用教程UI图片的操作
+        state = State.CountdownToStart;
+        OnStateChanged?.Invoke(this, EventArgs.Empty);
     }
 
     private void GameInput_OnInteractAction(object sender, EventArgs e) {
-        //如果当前状态是准备开始进入游戏
         if(state == State.WaitingToStart) {
             state = State.CountdownToStart;
             OnStateChanged?.Invoke(this, EventArgs.Empty);
@@ -93,7 +95,7 @@ public class KitchenGameManager : MonoBehaviour
             case State.GameOver:
                 break;
         }
-        Debug.Log(state);
+        //Debug.Log(state);
     }
 
     public bool IsGamePlaying() {

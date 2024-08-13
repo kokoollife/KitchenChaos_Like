@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 
-public class DeliveryManager : MonoBehaviour
+//修改继承
+public class DeliveryManager : NetworkBehaviour
 {
     public event EventHandler OnRecipeSpawned;
     public event EventHandler OnRecipeCompleted;
@@ -22,18 +24,34 @@ public class DeliveryManager : MonoBehaviour
         waitingRecipeSOList = new List<RecipeSO>();
     }
 
+    //同步产生菜谱，
+    //不过使用rpc，
+    //之后加入联网的玩家可能会跟服务端出现菜谱不一致的情况
     private void Update() {
+        //确保是服务端提供交付的计时
+        if (!IsServer) {
+            return;
+        }
+
         spawnRecipeTimer -= Time.deltaTime;
         if(spawnRecipeTimer <= 0f) {
             spawnRecipeTimer = spawnRecipeTimerMax;
-            //我们要确保的是交付的前提是游戏还在进行中
             if(KitchenGameManager.Instance.IsGamePlaying() && waitingRecipeSOList.Count < waitingRecipesMax) {
-                RecipeSO waitingRecipeSO = recipeListSO.recipeSOList[UnityEngine.Random.Range(0,recipeListSO.recipeSOList.Count)];
-                waitingRecipeSOList.Add(waitingRecipeSO);
-                OnRecipeSpawned?.Invoke(this, EventArgs.Empty);
+                int waitingRecipeSOIndex = UnityEngine.Random.Range(0, recipeListSO.recipeSOList.Count);
+                
+                SpawnNewWaitingRecipeClientRpc(waitingRecipeSOIndex);
             }
         }
     }
+
+    //补充rpc
+    [ClientRpc]
+    private void SpawnNewWaitingRecipeClientRpc(int waitingRecipeSOIndex) {
+        RecipeSO waitingRecipeSO = recipeListSO.recipeSOList[waitingRecipeSOIndex];
+        waitingRecipeSOList.Add(waitingRecipeSO);
+        OnRecipeSpawned?.Invoke(this, EventArgs.Empty);
+    }
+
     public void DeliverRecipe(PlateKitchenObject plateKitchenObject) {
         for(int i = 0; i < waitingRecipeSOList.Count; i++) {
             RecipeSO waitingRecipeSO = waitingRecipeSOList[i];
@@ -53,17 +71,44 @@ public class DeliveryManager : MonoBehaviour
                 }
 
                 if (plateContentsMatchesRecipe) {
-                    successfulRecipesAmount++;
-
-                    waitingRecipeSOList.RemoveAt(i);
-
-                    OnRecipeCompleted?.Invoke(this, EventArgs.Empty);
-                    OnRecipeSuccess?.Invoke(this, EventArgs.Empty);
+                    //修改
+                    DeliverCorrectRecipeServerRpc(i);
                     return;
                 }
             }
         }
+        //修改
+        DeliverIncorrectRecipeServerRpc();
+    }
+
+    //补充
+    [ServerRpc(RequireOwnership = false)]
+    private void DeliverIncorrectRecipeServerRpc() {
+        DeliverIncorrectRecipeClientRpc();
+    }
+
+    [ClientRpc]
+    private void DeliverIncorrectRecipeClientRpc() {
         OnRecipeFailed?.Invoke(this, EventArgs.Empty);
+    }
+
+    //(RequireOwnership = false)可以让客户端没有这个对象，也能使用
+    //具体表现就是交付柜台本来默认就是服务器拥有的
+    //现在客户端没有限制，可以使用这个物品了
+    [ServerRpc(RequireOwnership = false)]
+    private void DeliverCorrectRecipeServerRpc(int waitingRecipeSOListIndex) {
+        DeliverCorrectRecipeClientRpc(waitingRecipeSOListIndex);
+    }
+
+    //补充
+    [ClientRpc]
+    private void DeliverCorrectRecipeClientRpc(int waitingRecipeSOListIndex) {
+        successfulRecipesAmount++;
+
+        waitingRecipeSOList.RemoveAt(waitingRecipeSOListIndex);
+
+        OnRecipeCompleted?.Invoke(this, EventArgs.Empty);
+        OnRecipeSuccess?.Invoke(this, EventArgs.Empty);
     }
 
     public List<RecipeSO> GetWaitingRecipeSOList() {
