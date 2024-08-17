@@ -2,7 +2,8 @@ using System;
 using Unity.Netcode;
 using UnityEngine;
 
-public class BaseCounter : MonoBehaviour,IKitchenObjectParent
+//改动继承
+public class BaseCounter : NetworkBehaviour,IKitchenObjectParent
 {
     public static event EventHandler OnAnyObjectPlacedHere;
     [SerializeField] private Transform counterTopPoint;
@@ -42,8 +43,8 @@ public class BaseCounter : MonoBehaviour,IKitchenObjectParent
         OnAnyObjectPlacedHere = null;
     }
 
-    //实现接口
+    //改动
     public NetworkObject GetNetworkObject() {
-        return null;
+        return NetworkObject;
     }
 }

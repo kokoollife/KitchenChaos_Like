@@ -1,17 +1,34 @@
 using Unity.Netcode;
 using UnityEngine;
 
-//修改
 public class KitchenObject : NetworkBehaviour
 {
     [SerializeField] private KitchenObjectSO kitchenObjectSO;
 
     private IKitchenObjectParent kitchenObjectParent;
 
+    private FollowTransform followTransform;
+    
+    protected virtual void Awake() {
+        followTransform = GetComponent<FollowTransform>();
+    }
+
     public KitchenObjectSO GetKitchenObjectSO() { return kitchenObjectSO; }
 
     public void SetKitchenObjectParent(IKitchenObjectParent kitchenObjectParent) {
-        if(this.kitchenObjectParent != null) {
+        SetKitchenObjectParentServerRpc(kitchenObjectParent.GetNetworkObject());
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void SetKitchenObjectParentServerRpc(NetworkObjectReference kitchenObjectParentNetworkObjectReference) {
+        SetKitchenObjectParentClientRpc(kitchenObjectParentNetworkObjectReference);
+    }
+
+    [ClientRpc]
+    private void SetKitchenObjectParentClientRpc(NetworkObjectReference kitchenObjectParentNetworkObjectReference) {
+        kitchenObjectParentNetworkObjectReference.TryGet(out NetworkObject kitchenObjectParentNetworkObject);
+        IKitchenObjectParent kitchenObjectParent = kitchenObjectParentNetworkObject.GetComponent<IKitchenObjectParent>();
+        if (this.kitchenObjectParent != null) {
             this.kitchenObjectParent.ClearKitchenObject();
         }
 
@@ -20,21 +37,22 @@ public class KitchenObject : NetworkBehaviour
         if (kitchenObjectParent.HasKitchenObject()) {
             Debug.LogError("IKitchenObjectParent already has a KitchenObject!");
         }
-
         kitchenObjectParent.SetKitchenObject(this);
-        
-        //涉及到父类改变这些在联网环境下容易出问题
-        //transform.parent = kitchenObjectParent.GetKitchenObjectFollowTransform();
-        //transform.localPosition = Vector3.zero;
+        Debug.Log(kitchenObjectParent);
+        followTransform.SetTargetTransform(kitchenObjectParent.GetKitchenObjectFollowTransform());
     }
+
     public IKitchenObjectParent GetClearCounter() { return kitchenObjectParent; }
 
+    //改动原销毁的方法
     public void DestroySelf() {
-        kitchenObjectParent.ClearKitchenObject();
         Destroy(gameObject);
     }
+    //将父类与厨房物品的关系清除并分割开原来的销毁方法
+    public void ClearKitchenObjectOnParent() {
+        kitchenObjectParent.ClearKitchenObject();
+    }
 
-    //改动封装
     public static void SpawnKitchenObject(KitchenObjectSO kitchenObjectSO,IKitchenObjectParent kitchenObjectParent) {
         KitchenGameMultiplayer.Instance.SpawnKitchenObject(kitchenObjectSO, kitchenObjectParent);
     }
@@ -49,4 +67,10 @@ public class KitchenObject : NetworkBehaviour
             return false;
         }
     }
+
+    //独属于厨房物体的销毁方法
+    public static void DestroyKitchenObject(KitchenObject kitchenObject) {
+        KitchenGameMultiplayer.Instance.DestroyKitchenObject(kitchenObject);
+    }
+
 }

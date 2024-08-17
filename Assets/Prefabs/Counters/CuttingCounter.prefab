@@ -280,6 +280,11 @@ PrefabInstance:
       propertyPath: m_LocalPosition.y
       value: 1.303
       objectReference: {fileID: 0}
+    - target: {fileID: 5835716108304997720, guid: bc7244914958ecf4384d2813d3246f7b,
+        type: 3}
+      propertyPath: GlobalObjectIdHash
+      value: 951099334
+      objectReference: {fileID: 0}
     - target: {fileID: 6624087679016683247, guid: bc7244914958ecf4384d2813d3246f7b,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -353,7 +358,7 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 6729669098053828004, guid: bc7244914958ecf4384d2813d3246f7b,
         type: 3}
-      insertIndex: -1
+      insertIndex: 2
       addedObject: {fileID: 5368267943832900334}
   m_SourcePrefab: {fileID: 100100000, guid: bc7244914958ecf4384d2813d3246f7b, type: 3}
 --- !u!4 &801683388437556029 stripped

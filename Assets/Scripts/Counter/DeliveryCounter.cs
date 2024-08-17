@@ -1,6 +1,5 @@
 public class DeliveryCounter : BaseCounter
 {
-    //ÐÞ¸Ä³Éµ¥Àý
     public static DeliveryCounter Instance { get; private set; }
 
     private void Awake() {
@@ -11,7 +10,8 @@ public class DeliveryCounter : BaseCounter
         if (player.HasKitchenObject()) {
             if(player.GetKitchenObject().TryGetPlate(out PlateKitchenObject plateKitchenObject)) {
                 DeliveryManager.Instance.DeliverRecipe(plateKitchenObject);
-                player.GetKitchenObject().DestroySelf();
+                //player.GetKitchenObject().DestroySelf();
+                KitchenObject.DestroyKitchenObject(player.GetKitchenObject());
             }
         }
     }

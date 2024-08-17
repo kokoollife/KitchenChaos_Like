@@ -12,7 +12,9 @@ public class PlateKitchenObject : KitchenObject {
 
     private List<KitchenObjectSO> kitchenObjectSOList;
 
-    private void Awake() {
+    //改动这里，为什么就能同步盘子物体？
+    protected override void Awake() {
+        base.Awake();
         kitchenObjectSOList = new List<KitchenObjectSO>();
     }
 
@@ -33,7 +35,6 @@ public class PlateKitchenObject : KitchenObject {
         }
     }
 
-    //公开允许获取到目前食物数据列表中的食物数据
     public List<KitchenObjectSO> GetKitchenObjectSOList() {
         return kitchenObjectSOList;
     }

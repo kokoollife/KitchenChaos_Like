@@ -8,6 +8,11 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 5835716108304997720, guid: bc7244914958ecf4384d2813d3246f7b,
+        type: 3}
+      propertyPath: GlobalObjectIdHash
+      value: 951099334
+      objectReference: {fileID: 0}
     - target: {fileID: 6624087679016683247, guid: bc7244914958ecf4384d2813d3246f7b,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -77,7 +82,7 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 6729669098053828004, guid: bc7244914958ecf4384d2813d3246f7b,
         type: 3}
-      insertIndex: -1
+      insertIndex: 2
       addedObject: {fileID: 1838028174163428995}
   m_SourcePrefab: {fileID: 100100000, guid: bc7244914958ecf4384d2813d3246f7b, type: 3}
 --- !u!1 &4850615832970220122 stripped
@@ -350,8 +355,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   platesCounter: {fileID: 1838028174163428995}
   counterTopPoint: {fileID: 6527311563763632378}
-  plateVisualPrefab: {fileID: 3812876574508226176, guid: c0c9afd619b40914a8f625c0535e2284,
-    type: 3}
+  plateVisualSO: {fileID: 11400000, guid: 2de2a0eacb4221042a0bb2c206b7f209, type: 2}
 --- !u!4 &5460526436152108977 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4589716710238282923, guid: e21b499d164095947b7559f0267f0e63,

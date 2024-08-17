@@ -8,6 +8,11 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 5835716108304997720, guid: bc7244914958ecf4384d2813d3246f7b,
+        type: 3}
+      propertyPath: GlobalObjectIdHash
+      value: 951099334
+      objectReference: {fileID: 0}
     - target: {fileID: 6624087679016683247, guid: bc7244914958ecf4384d2813d3246f7b,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -77,7 +82,7 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 6729669098053828004, guid: bc7244914958ecf4384d2813d3246f7b,
         type: 3}
-      insertIndex: -1
+      insertIndex: 2
       addedObject: {fileID: 9005146806764516746}
   m_SourcePrefab: {fileID: 100100000, guid: bc7244914958ecf4384d2813d3246f7b, type: 3}
 --- !u!4 &5342542544372028079 stripped
@@ -104,8 +109,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b228de469ea9b6e4b933a22300e2dd78, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  kitchenObjectSO: {fileID: 11400000, guid: eb9edef7d8c981d47a12952141ff873e, type: 2}
   counterTopPoint: {fileID: 5342542544372028079}
+  kitchenObjectSO: {fileID: 11400000, guid: eb9edef7d8c981d47a12952141ff873e, type: 2}
 --- !u!4 &6154202748590420804 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 6624087679016683247, guid: bc7244914958ecf4384d2813d3246f7b,
