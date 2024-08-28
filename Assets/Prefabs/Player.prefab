@@ -40,11 +40,12 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2583470949658323146}
+  - component: {fileID: 5599528819983576776}
   - component: {fileID: 3090644035489378008}
   - component: {fileID: 7459133444863833307}
   - component: {fileID: 9152900374426428275}
   - component: {fileID: 1973443203704881019}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Player
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -69,6 +70,27 @@ Transform:
   - {fileID: 4798418705418716572}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &5599528819983576776
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8942149271928680893}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.7, y: 1, z: 0.7}
+  m_Center: {x: 0, y: 0.5, z: 0}
 --- !u!114 &3090644035489378008
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -85,7 +107,15 @@ MonoBehaviour:
   countersLayerMask:
     serializedVersion: 2
     m_Bits: 64
+  collisionsLayerMask:
+    serializedVersion: 2
+    m_Bits: 192
   kitchenObjectHoldPoint: {fileID: 6528340314005393083}
+  spawnPositionList:
+  - {x: 2, y: 0, z: 0}
+  - {x: -2, y: 0, z: 0}
+  - {x: 2, y: 0, z: -2}
+  - {x: -2, y: 0, z: -2}
 --- !u!114 &7459133444863833307
 MonoBehaviour:
   m_ObjectHideFlags: 0

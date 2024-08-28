@@ -1,8 +1,9 @@
 using System;
+using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 
-
-public class KitchenGameManager : MonoBehaviour
+public class KitchenGameManager : NetworkBehaviour
 {
     public static KitchenGameManager Instance { get; private set; }
 
@@ -14,36 +15,87 @@ public class KitchenGameManager : MonoBehaviour
     }
 
     public event EventHandler OnStateChanged;
-    public event EventHandler OnGamePaused;
-    public event EventHandler OnGameUnpaused;
+    public event EventHandler OnLocalGamePaused;
+    public event EventHandler OnLocalGameUnpaused;
+    public event EventHandler OnLocalPlayerReadyChanged;
+    public event EventHandler OnMultiplayerGamePaused;
+    public event EventHandler OnMultiplayerGameUnpaused;
 
-    private State state;
-    //[SerializeField] private float waitingToStartTimer = 1f;
-    [SerializeField] private float countdownToStartTimer = 1f;
-    [SerializeField] private float gamePlayingTimer;
-    [SerializeField] private float gamePlayingTimerMax = 90f;
+    private NetworkVariable<State> state = new NetworkVariable<State>(State.WaitingToStart);
+    private bool isLocalPlayerReady;
+    private Dictionary<ulong, bool> playerReadyDictionary;
+    private NetworkVariable<float> countdownToStartTimer = new NetworkVariable<float>(3f);
+    private NetworkVariable<float> gamePlayingTimer= new NetworkVariable<float>(0f);
+    private float gamePlayingTimerMax = 300f;
+    private bool isLocalGamePaused = false;
+    private Dictionary<ulong, bool> playerPausedDictionary;
+    private NetworkVariable<bool> isGamePaused = new NetworkVariable<bool>(false);
+    private bool autoTestGamePausedState;
 
-    private bool isGamePaused = false;
 
     private void Awake() {
         Instance = this;
-        state = State.WaitingToStart;
+        playerReadyDictionary = new Dictionary<ulong, bool>();
+        playerPausedDictionary = new Dictionary<ulong, bool>();
     }
 
     private void Start() {
         GameInput.Instance.OnPauseAction += GameInput_OnPauseAction;
         GameInput.Instance.OnInteractAction += GameInput_OnInteractAction;
-        //Debug:直接进入到状态，不用再等一个计时缓冲了。
-        //不要忘记，不启用教程UI图片的操作
-        state = State.CountdownToStart;
+    }
+
+    public override void OnNetworkSpawn() {
+        state.OnValueChanged += State_OnValueChanged;
+        isGamePaused.OnValueChanged += IsGamePaused_OnValueChanged;
+        if (IsServer) {
+            NetworkManager.Singleton.OnClientDisconnectCallback += NetworkManager_OnClientDisconnectCallback;
+        }
+    }
+
+    private void NetworkManager_OnClientDisconnectCallback(ulong clientId) {
+        autoTestGamePausedState = true;
+    }
+
+    private void IsGamePaused_OnValueChanged(bool previousValue, bool newValue) {
+        if (isGamePaused.Value) {
+            Time.timeScale = 0f;
+            OnMultiplayerGamePaused?.Invoke(this, EventArgs.Empty);
+        }
+        else {
+            Time.timeScale = 1f;
+            OnMultiplayerGameUnpaused?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    private void State_OnValueChanged(State previousValue, State newValue) {
         OnStateChanged?.Invoke(this, EventArgs.Empty);
     }
 
     private void GameInput_OnInteractAction(object sender, EventArgs e) {
-        if(state == State.WaitingToStart) {
-            state = State.CountdownToStart;
-            OnStateChanged?.Invoke(this, EventArgs.Empty);
+        if(state.Value == State.WaitingToStart) {
+            isLocalPlayerReady = true;
+            OnLocalPlayerReadyChanged?.Invoke(this, EventArgs.Empty);
+            
+            SetPlayerReadyServerRpc();
         }
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void SetPlayerReadyServerRpc(ServerRpcParams serverRpcParams =default) {
+        playerReadyDictionary[serverRpcParams.Receive.SenderClientId] = true;
+        bool allClientsReady = true;
+        foreach(ulong clientId in NetworkManager.Singleton.ConnectedClientsIds) {
+            if(!playerReadyDictionary.ContainsKey(clientId) || !playerReadyDictionary[clientId]) {
+                allClientsReady = false;
+                break;
+            }
+        }
+
+        if (allClientsReady) {
+            state.Value = State.CountdownToStart;
+        }
+
+        Debug.Log("All Clients Ready："+ allClientsReady);
     }
 
     private void GameInput_OnPauseAction(object sender, EventArgs e) {
@@ -51,70 +103,97 @@ public class KitchenGameManager : MonoBehaviour
     }
 
     public void TogglePauseGame() {
-        isGamePaused = !isGamePaused;
-        if (isGamePaused) {
-            Time.timeScale = 0f;
-            OnGamePaused?.Invoke(this, EventArgs.Empty);
+        isLocalGamePaused = !isLocalGamePaused;
+        if (isLocalGamePaused) {
+            PauseGameServerRpc();
+            OnLocalGamePaused?.Invoke(this, EventArgs.Empty);
         }
         else {
-            Time.timeScale = 1f;
-            OnGameUnpaused?.Invoke(this, EventArgs.Empty);
+            UnpauseGameServerRpc();
+            OnLocalGameUnpaused?.Invoke(this, EventArgs.Empty);
         }
 
     }
 
+    [ServerRpc(RequireOwnership = false)]
+    private void PauseGameServerRpc(ServerRpcParams serverRpcParams = default) {
+        playerPausedDictionary[serverRpcParams.Receive.SenderClientId] = true;
+        TestGamePausedState();
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void UnpauseGameServerRpc(ServerRpcParams serverRpcParams = default) {
+        playerPausedDictionary[serverRpcParams.Receive.SenderClientId] = false;
+        TestGamePausedState();
+    }
+
+    private void TestGamePausedState() {
+        foreach(ulong clientId in NetworkManager.Singleton.ConnectedClientsIds) {
+            if(playerPausedDictionary.ContainsKey(clientId) && playerPausedDictionary[clientId]) {
+                isGamePaused.Value = true;
+                return;
+            }
+        }
+        isGamePaused.Value = false;
+    }
+
     private void Update() {
-        switch (state) {
+        if (!IsServer) {
+            return;
+        }
+        switch (state.Value) {
             case State.WaitingToStart:
-                //我们把逻辑的处理交给了事件，因为教程相关的脚本不在
-                //游戏管理器中，所以只拿个状态作为判断
-                //同时也不再需要计时器做一个缓冲了
-                //直接就是进入到新手引导图片，卡住，直到我们交互
-                //waitingToStartTimer -= Time.deltaTime; 
-                //if(waitingToStartTimer < 0f) {
-                //    state = State.CountdownToStart;
-                //    OnStateChanged?.Invoke(this,EventArgs.Empty);
-                //}
-                //就进入到游戏进行时前的倒数阶段。
                 break;
             case State.CountdownToStart:
-                countdownToStartTimer -= Time.deltaTime;
-                if(countdownToStartTimer < 0f) {
-                    state = State.GamePlaying;
-                    gamePlayingTimer = gamePlayingTimerMax;
-                    OnStateChanged?.Invoke(this, EventArgs.Empty);
+                countdownToStartTimer.Value -= Time.deltaTime;
+                if(countdownToStartTimer.Value < 0f) {
+                    state.Value = State.GamePlaying;
+                    gamePlayingTimer.Value = gamePlayingTimerMax;
                 }
                 break;
             case State.GamePlaying:
-                gamePlayingTimer -= Time.deltaTime;
-                if(gamePlayingTimer < 0f) {
-                    state = State.GameOver;
-                    OnStateChanged?.Invoke(this, EventArgs.Empty);
+                gamePlayingTimer.Value -= Time.deltaTime;
+                if(gamePlayingTimer.Value < 0f) {
+                    state.Value = State.GameOver;
                 }
                 break;
             case State.GameOver:
                 break;
         }
-        //Debug.Log(state);
+    }
+
+    private void LateUpdate() {
+        if (autoTestGamePausedState) {
+            autoTestGamePausedState = false;
+            TestGamePausedState();
+        }
     }
 
     public bool IsGamePlaying() {
-        return state == State.GamePlaying;
+        return state.Value == State.GamePlaying;
     }
 
     public bool IsCountdownToStartActive() {
-        return state == State.CountdownToStart;
+        return state.Value == State.CountdownToStart;
     }
 
     public bool IsGameOver() {
-        return state == State.GameOver;
+        return state.Value == State.GameOver;
+    }
+
+    public bool IsLocalPlayerReady() {
+        return isLocalPlayerReady;
     }
 
     public float GetCountdownToStartTimer() {
-        return countdownToStartTimer;
+        return countdownToStartTimer.Value;
     }
 
     public float GetGamePlayingTimerNormalized() {
-        return 1-(gamePlayingTimer / gamePlayingTimerMax);
+        return 1-(gamePlayingTimer.Value / gamePlayingTimerMax);
+    }
+    //返回相应的状态
+    public bool IsWaitingToStart() {
+        return state.Value == State.WaitingToStart;
     }
 }

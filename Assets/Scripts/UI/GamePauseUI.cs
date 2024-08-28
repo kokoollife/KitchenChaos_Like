@@ -1,3 +1,4 @@
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -10,28 +11,29 @@ public class GamePauseUI : MonoBehaviour {
         resumeButton.onClick.AddListener(() => {
             KitchenGameManager.Instance.TogglePauseGame();
         });
+        //解决问题4:补充断连操作
         mainMenuButton.onClick.AddListener(() => {
+            NetworkManager.Singleton.Shutdown();
             Loader.Load(Loader.Scene.MainMenuScene);
         });
 
         optionsButton.onClick.AddListener(() => {
             Hide();
-            //利用委托，传入GamePauseUI.Show
             OptionsUI.Instance.Show(Show);
         });
     }
-
+    //改个事件函数名称
     private void Start() {
-        KitchenGameManager.Instance.OnGamePaused += KitchenGameManager_OnGamePaused;
-        KitchenGameManager.Instance.OnGameUnpaused += KitchenGameManager_OnGameUnpaused;
+        KitchenGameManager.Instance.OnLocalGamePaused += KitchenGameManager_OnLocalGamePaused;
+        KitchenGameManager.Instance.OnLocalGameUnpaused += KitchenGameManager_OnLocalGameUnpaused;
         Hide();
     }
 
-    private void KitchenGameManager_OnGameUnpaused(object sender, System.EventArgs e) {
+    private void KitchenGameManager_OnLocalGameUnpaused(object sender, System.EventArgs e) {
         Hide();
     }
 
-    private void KitchenGameManager_OnGamePaused(object sender, System.EventArgs e) {
+    private void KitchenGameManager_OnLocalGamePaused(object sender, System.EventArgs e) {
         Show();
     }
 

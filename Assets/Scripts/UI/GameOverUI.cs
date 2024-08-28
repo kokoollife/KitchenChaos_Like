@@ -1,10 +1,22 @@
 using System;
 using TMPro;
+using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class GameOverUI : MonoBehaviour
 {
+    //注意补充相应的ui按钮
+    [SerializeField] private Button playAgainButton;
     [SerializeField] private TextMeshProUGUI recipesDeliveredText;
+
+    //补充这个函数
+    private void Awake() {
+        playAgainButton.onClick.AddListener(() => {
+            NetworkManager.Singleton.Shutdown();
+            Loader.Load(Loader.Scene.MainMenuScene);
+        });
+    }
 
     private void Start() {
         KitchenGameManager.Instance.OnStateChanged += KitchenGameManager_OnStateChanged;
@@ -14,8 +26,6 @@ public class GameOverUI : MonoBehaviour
     private void KitchenGameManager_OnStateChanged(object sender, EventArgs e) {
         if (KitchenGameManager.Instance.IsGameOver()) {
             Show();
-
-            //结束画面的数字不会发生变化。
             recipesDeliveredText.text = DeliveryManager.Instance.GetSuccessfulRecipesAmount().ToString();
         }
         else {

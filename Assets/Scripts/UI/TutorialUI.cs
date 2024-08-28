@@ -15,17 +15,24 @@ class TutorialUI : MonoBehaviour {
     [SerializeField] private TextMeshProUGUI keyGamepadPauseText;
 
     private void Start() {
-        //事件加入更新显示的按钮的逻辑，调用是其他脚本看情况需要的
         GameInput.Instance.OnBindingRebind += GameInput_OnBindingRebind;
-        //这里就是管理器里面用fsm管理游戏运行的状态，所以这里加入
         KitchenGameManager.Instance.OnStateChanged += KitchenGameManager_OnStateChanged;
-        UpdateVisual();//为了避免事件有可能不更新显示的按钮，所以这里要直接调用
+        //开始的时候就添加这个事件函数
+        KitchenGameManager.Instance.OnLocalPlayerReadyChanged += KitchenGameManager_OnLocalPlayerReadyChanged;
 
-        Show();//默认开始的时候就显示新手引导图片
+
+        UpdateVisual();
+
+        Show();
+    }
+
+    private void KitchenGameManager_OnLocalPlayerReadyChanged(object sender, EventArgs e) {
+        if (KitchenGameManager.Instance.IsLocalPlayerReady()) {
+            Hide();//如果确定某个本地玩家已经开始游戏了，就隐藏掉这个教程UI。
+        }
     }
 
     private void KitchenGameManager_OnStateChanged(object sender, EventArgs e) {
-        //如果我们游戏状态已经到开始了，那么我们也相应要隐藏掉这个新手引导图片
         if (KitchenGameManager.Instance.IsCountdownToStartActive()) {
             Hide();
         }

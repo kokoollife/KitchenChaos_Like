@@ -1,3 +1,4 @@
+using System;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -9,6 +10,28 @@ public class KitchenGameMultiplayer : NetworkBehaviour
 
     private void Awake() {
         Instance = this;
+    }
+
+    //封装下面这两个方法
+    public void StartHost() {
+        //默认批准
+        NetworkManager.Singleton.ConnectionApprovalCallback += NetworkManager_ConnectionApprovalCallback;
+        NetworkManager.Singleton.StartHost();
+    }
+
+    private void NetworkManager_ConnectionApprovalCallback(NetworkManager.ConnectionApprovalRequest connectionApprovalRequest, NetworkManager.ConnectionApprovalResponse connectionApprovalResponse) {
+        if (KitchenGameManager.Instance.IsWaitingToStart()) {
+            connectionApprovalResponse.Approved = true;
+            //避免先启动客户端后启动服务端没有生成玩家预制体问题
+            connectionApprovalResponse.CreatePlayerObject = true;
+        }else {
+            Debug.Log("???");
+            connectionApprovalResponse.Approved = false;
+        }
+    }
+
+    public void StartClient() {
+        NetworkManager.Singleton.StartClient();
     }
 
     public void SpawnKitchenObject(KitchenObjectSO kitchenObjectSO, IKitchenObjectParent kitchenObjectParent) {
@@ -33,15 +56,14 @@ public class KitchenGameMultiplayer : NetworkBehaviour
         kitchenObject.SetKitchenObjectParent(kitchenObjectParent);
     }
     
-    private int GetKitchenObjectSOIndex(KitchenObjectSO kitchenObjectSO) {
+    public int GetKitchenObjectSOIndex(KitchenObjectSO kitchenObjectSO) {
         return kitchenObjectListSO.kitchenObjectSOList.IndexOf(kitchenObjectSO);
     }
 
-    private KitchenObjectSO GetKitchenObjectSOFromIndex(int kitchenObjectSOIndex) {
+    public KitchenObjectSO GetKitchenObjectSOFromIndex(int kitchenObjectSOIndex) {
         return kitchenObjectListSO.kitchenObjectSOList[kitchenObjectSOIndex];
     }
 
-    //弄专门销毁网络对象的方式
     public void DestroyKitchenObject(KitchenObject kitchenObject) {
         DestroyKitchenObjectServerRpc(kitchenObject.NetworkObject);
     }
@@ -54,8 +76,6 @@ public class KitchenGameMultiplayer : NetworkBehaviour
         kitchenObject.DestroySelf();
     }
 
-    //要注意销毁厨房物品是一个方法，然后同步，这交给服务端处理
-    //清除与父类也就是我们的player关系的也是一个方法/功能，所以同步，交给客户端处理
     [ClientRpc]
     private void ClearKitchenObjectOnParentClientRpc(NetworkObjectReference kitchenObjectNetworkObjectReference) {
         kitchenObjectNetworkObjectReference.TryGet(out NetworkObject kitchenObjectNetworkObject);

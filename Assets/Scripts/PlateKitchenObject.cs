@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 
 public class PlateKitchenObject : KitchenObject {
@@ -12,7 +13,6 @@ public class PlateKitchenObject : KitchenObject {
 
     private List<KitchenObjectSO> kitchenObjectSOList;
 
-    //改动这里，为什么就能同步盘子物体？
     protected override void Awake() {
         base.Awake();
         kitchenObjectSOList = new List<KitchenObjectSO>();
@@ -27,12 +27,25 @@ public class PlateKitchenObject : KitchenObject {
             return false;
         }
         else {
-            kitchenObjectSOList.Add(kitchenObjectSO);
-            OnIngredientAdded?.Invoke(this,new OnIngredientAddedEventArgs {
-                kitchenObjectSO =kitchenObjectSO
-            });
+            //中转
+            AddIngredientServerRpc(
+                KitchenGameMultiplayer.Instance.GetKitchenObjectSOIndex(kitchenObjectSO)
+            );
             return true;
         }
+    }
+    //改动
+    [ServerRpc(RequireOwnership = false)]
+    private void AddIngredientServerRpc(int kitchenObjectSOIndex) {
+        AddIngredientClientRpc(kitchenObjectSOIndex);
+    }
+    [ClientRpc]
+    private void AddIngredientClientRpc(int kitchenObjectSOIndex) {
+        KitchenObjectSO kitchenObjectSO = KitchenGameMultiplayer.Instance.GetKitchenObjectSOFromIndex(kitchenObjectSOIndex);
+        kitchenObjectSOList.Add(kitchenObjectSO);
+        OnIngredientAdded?.Invoke(this, new OnIngredientAddedEventArgs {
+            kitchenObjectSO = kitchenObjectSO
+        });
     }
 
     public List<KitchenObjectSO> GetKitchenObjectSOList() {
