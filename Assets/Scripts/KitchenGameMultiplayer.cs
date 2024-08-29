@@ -1,37 +1,59 @@
 using System;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class KitchenGameMultiplayer : NetworkBehaviour
 {
+    //限定玩家总数
+    private const int MAX_PLAYER_AMOUNT = 4;
+
     public static KitchenGameMultiplayer Instance { get; private set; }
+
+    //弄事件
+    public event EventHandler OnTryingToJoinGame;
+    public event EventHandler OnFailedToJoinGame;
 
     [SerializeField] private KitchenObjectListSO kitchenObjectListSO;
 
     private void Awake() {
         Instance = this;
+        DontDestroyOnLoad(this);
     }
 
-    //封装下面这两个方法
     public void StartHost() {
-        //默认批准
         NetworkManager.Singleton.ConnectionApprovalCallback += NetworkManager_ConnectionApprovalCallback;
         NetworkManager.Singleton.StartHost();
     }
 
     private void NetworkManager_ConnectionApprovalCallback(NetworkManager.ConnectionApprovalRequest connectionApprovalRequest, NetworkManager.ConnectionApprovalResponse connectionApprovalResponse) {
-        if (KitchenGameManager.Instance.IsWaitingToStart()) {
-            connectionApprovalResponse.Approved = true;
-            //避免先启动客户端后启动服务端没有生成玩家预制体问题
-            connectionApprovalResponse.CreatePlayerObject = true;
-        }else {
-            Debug.Log("???");
+        //再次更改
+        if(SceneManager.GetActiveScene().name != Loader.Scene.CharacterSelectScene.ToString()) {
             connectionApprovalResponse.Approved = false;
+            connectionApprovalResponse.Reason = "Game has already started";
+            return;
         }
+
+        if(NetworkManager.Singleton.ConnectedClientsIds.Count >= MAX_PLAYER_AMOUNT) {
+            connectionApprovalResponse.Approved = false;
+            connectionApprovalResponse.Reason = "Game is full";
+            return;
+        }
+        connectionApprovalResponse.Approved = true;
     }
 
     public void StartClient() {
+        //补充事件的调用
+        OnTryingToJoinGame?.Invoke(this, EventArgs.Empty);
+
+        //再专门处理断连的情况
+        NetworkManager.Singleton.OnClientDisconnectCallback += NetworkManager_OnClientDisconnectCallback;
         NetworkManager.Singleton.StartClient();
+    }
+
+    private void NetworkManager_OnClientDisconnectCallback(ulong clientId) {
+        //专门调用断连的问题
+        OnFailedToJoinGame?.Invoke(this, EventArgs.Empty);
     }
 
     public void SpawnKitchenObject(KitchenObjectSO kitchenObjectSO, IKitchenObjectParent kitchenObjectParent) {

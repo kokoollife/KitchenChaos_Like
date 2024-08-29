@@ -6,7 +6,9 @@ public class MainMenuUI : MonoBehaviour {
 
     private void Awake() {
         playButton.onClick.AddListener(() => {
-            Loader.Load(Loader.Scene.GameScene);
+            //Loader.Load(Loader.Scene.GameScene);
+            //改动切换的场景
+            Loader.Load(Loader.Scene.LobbyScene);
         });
 
         quitButton.onClick.AddListener(() => {

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class KitchenGameManager : NetworkBehaviour
 {
@@ -13,6 +14,9 @@ public class KitchenGameManager : NetworkBehaviour
         GamePlaying,
         GameOver,
     }
+
+    //新增玩家预制体的引用
+    [SerializeField] private Transform playerPrefab;
 
     public event EventHandler OnStateChanged;
     public event EventHandler OnLocalGamePaused;
@@ -49,6 +53,16 @@ public class KitchenGameManager : NetworkBehaviour
         isGamePaused.OnValueChanged += IsGamePaused_OnValueChanged;
         if (IsServer) {
             NetworkManager.Singleton.OnClientDisconnectCallback += NetworkManager_OnClientDisconnectCallback;
+            //补充相应的事件，获取所有的客户端
+            NetworkManager.Singleton.SceneManager.OnLoadEventCompleted += SceneManager_OnLoadEventCompleted;
+        }
+    }
+    //实现相应操作，因为之前我们不再默认在一个场景中借助玩家预制体生成玩家对象
+    //而是通过遍历所有客户端，当我们进入到游戏中借助预制体列表中查找到玩家预制体。
+    private void SceneManager_OnLoadEventCompleted(string sceneName, LoadSceneMode loadSceneMode, List<ulong> clientsCompleted, List<ulong> clientsTimedOut) {
+        foreach(ulong clientId in NetworkManager.Singleton.ConnectedClientsIds) {
+            Transform playerTransform = Instantiate(playerPrefab);
+            playerTransform.GetComponent<NetworkObject>().SpawnAsPlayerObject(clientId, true);
         }
     }
 
@@ -192,7 +206,7 @@ public class KitchenGameManager : NetworkBehaviour
     public float GetGamePlayingTimerNormalized() {
         return 1-(gamePlayingTimer.Value / gamePlayingTimerMax);
     }
-    //返回相应的状态
+
     public bool IsWaitingToStart() {
         return state.Value == State.WaitingToStart;
     }
