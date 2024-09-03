@@ -24,6 +24,8 @@ public class Player : NetworkBehaviour, IKitchenObjectParent {
     [SerializeField] private LayerMask collisionsLayerMask;
     [SerializeField] private Transform kitchenObjectHoldPoint;
     [SerializeField] private List<Vector3> spawnPositionList;
+    //挂载引用脚本
+    [SerializeField] private PlayerVisual playerVisual;
 
     private bool isWalking;
     private Vector3 lastInteractDir;
@@ -37,20 +39,20 @@ public class Player : NetworkBehaviour, IKitchenObjectParent {
 
         }
         countersLayerMask = LayerMask.GetMask("Counters");
-        transform.position = spawnPositionList[(int)OwnerClientId];
+
+        //transform.position = spawnPositionList[(int)OwnerClientId];
+        //改动这里确保之后按顺序索引，而不是玩家的客户端id，以免出现bug（多次被踢出/离开房间然后重加入）
+        transform.position = spawnPositionList[KitchenGameMultiplayer.Instance.GetPlayerDataIndexFromClientId(OwnerClientId)];
+
         OnAnyPlayerSpawned?.Invoke(this, EventArgs.Empty);
 
-        //解决问题1：
-        //做法就是专门交给服务端判断，利用联网自带的事件，专门处理客户端断连的情况
         if (IsServer) {
             NetworkManager.Singleton.OnClientDisconnectCallback += NetworkManager_OnClientDisconnectCallback;
         }
     }
 
     private void NetworkManager_OnClientDisconnectCallback(ulong clientId) {
-        //专门判断如果是客户端，然后它手上有厨房物品
         if(clientId == OwnerClientId && HasKitchenObject()) {
-            //就利用之前封装好的方法，销毁掉厨房物品（联机）
             KitchenObject.DestroyKitchenObject(GetKitchenObject());
         }
     }
@@ -58,6 +60,9 @@ public class Player : NetworkBehaviour, IKitchenObjectParent {
     private void Start() {
         GameInput.Instance.OnInteractAction += GameInput_OnInteractAction;
         GameInput.Instance.OnInteractAlternateAction += GameInput_OnInteractAlternateAction;
+        //更新颜色
+        PlayerData playerData = KitchenGameMultiplayer.Instance.GetPlayerDataFromClientId(OwnerClientId);
+        playerVisual.SetPlayerColor(KitchenGameMultiplayer.Instance.GetPlayerColor(playerData.colorId));
     }
 
     private void GameInput_OnInteractAlternateAction(object sender, EventArgs e) {

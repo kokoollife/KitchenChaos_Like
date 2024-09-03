@@ -13,6 +13,7 @@ public class GameOverUI : MonoBehaviour
     //²¹³äÕâ¸öº¯Êý
     private void Awake() {
         playAgainButton.onClick.AddListener(() => {
+            KitchenGameLobby.Instance.LeaveLobby();
             NetworkManager.Singleton.Shutdown();
             Loader.Load(Loader.Scene.MainMenuScene);
         });

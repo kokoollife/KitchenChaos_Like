@@ -13,6 +13,7 @@ public class GamePauseUI : MonoBehaviour {
         });
         //解决问题4:补充断连操作
         mainMenuButton.onClick.AddListener(() => {
+            KitchenGameLobby.Instance.LeaveLobby();
             NetworkManager.Singleton.Shutdown();
             Loader.Load(Loader.Scene.MainMenuScene);
         });
